@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sorteio Jumpstart</title>
+<meta name="description" content="Sorteie boosters de Magic: The Gathering Jumpstart entre os jogadores, sem repetir.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><ellipse cx='50' cy='50' rx='34' ry='44' fill='%23c3772f' stroke='%232f4d7a' stroke-width='8'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c0a08;
+    --frame:#17120d;
+    --frame-2:#1f1811;
+    --edge:#3a2c18;
+    --well:#0f0c09;
+    --paper:#efe3c8;
+    --paper-2:#d8c69d;
+    --gold:#d4af5a;
+    --gold-2:#a8843a;
+    --ink:#ece2cc;
+    --ink-dim:#a59a84;
+    --ink-dark:#1a1209;
+    --danger:#e0604c;
+    --title:'Cinzel',Georgia,serif;
+    --text:'EB Garamond',Georgia,serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(60% 40% at 0% 0%, rgba(31,111,184,.16), transparent 70%),
+      radial-gradient(50% 40% at 100% 10%, rgba(196,53,42,.14), transparent 70%),
+      radial-gradient(60% 40% at 100% 100%, rgba(44,122,72,.14), transparent 70%),
+      radial-gradient(60% 40% at 0% 100%, rgba(227,217,166,.08), transparent 70%),
+      var(--bg);
+    background-attachment:fixed;
+    color:var(--ink);
+    font-family:var(--text);
+    font-size:17px;
+    min-height:100vh;
+    padding:32px 16px 64px;
+    display:flex;
+    justify-content:center;
+  }
+  .wrap{width:100%;max-width:480px;}
+  button,input{font-family:inherit;font-size:inherit;color:inherit;}
+  button{cursor:pointer;}
+  :focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+
+  /* ---------- cabeçalho ---------- */
+  header{text-align:center;margin-bottom:28px;}
+  .pips{display:flex;justify-content:center;gap:8px;margin-bottom:14px;}
+  .pip{
+    width:26px;height:26px;border-radius:50%;flex-shrink:0;
+    display:inline-flex;align-items:center;justify-content:center;
+    font-family:var(--title);font-weight:800;font-size:.8rem;color:#140e08;
+    background:var(--pip);
+    box-shadow:inset 0 -2px 3px rgba(0,0,0,.25), inset 0 2px 2px rgba(255,255,255,.5), 0 1px 0 rgba(0,0,0,.6);
+  }
+  h1{
+    font-family:var(--title);font-weight:800;font-size:2.1rem;line-height:1.1;
+    margin:0 0 8px;letter-spacing:.02em;
+    background:linear-gradient(180deg,#f7e7b6 0%,var(--gold) 55%,var(--gold-2) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 2px 18px rgba(212,175,90,.15);
+    border-radius:6px;padding:2px 6px;
+  }
+  h1:hover{box-shadow:0 0 0 1px var(--edge);}
+  .flavor{
+    font-style:italic;color:var(--ink-dim);font-size:1.05rem;line-height:1.45;
+    margin:0 auto;max-width:38ch;
+  }
+
+  /* ---------- carta (card) ---------- */
+  .card{
+    background:linear-gradient(180deg,var(--frame-2),var(--frame));
+    border:1px solid #000;border-radius:18px;padding:7px;margin-bottom:18px;
+    box-shadow:inset 0 0 0 1px var(--edge), 0 14px 34px rgba(0,0,0,.55);
+    animation:rise .45s ease both;
+  }
+  .card-name{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:linear-gradient(180deg,var(--paper),var(--paper-2));
+    color:var(--ink-dark);border:2px solid var(--gold-2);border-radius:12px 12px 6px 6px;
+    padding:7px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.6), 0 2px 0 #000;
+  }
+  .card-name h2{font-family:var(--title);font-size:1.02rem;font-weight:700;margin:0;letter-spacing:.02em;}
+  .card-name .pips{margin:0;gap:3px;}
+  .card-name .pip{width:16px;height:16px;font-size:.55rem;}
+  .type-line{
+    font-family:var(--title);font-size:.72rem;font-weight:600;letter-spacing:.06em;
+    color:var(--paper-2);margin:8px 6px 0;padding-bottom:6px;border-bottom:1px solid var(--edge);
+  }
+  .card-body{padding:14px 10px 10px;}
+  .hint{font-style:italic;color:var(--ink-dim);font-size:.95rem;line-height:1.4;margin:10px 0 0;}
+  .hint.bad{color:var(--danger);font-style:normal;}
+  @keyframes rise{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+  /* ---------- campos ---------- */
+  input[type=text],input[type=number]{
+    width:100%;background:var(--well);border:1px solid var(--edge);border-radius:8px;
+    padding:9px 11px;
+  }
+  input:focus{outline:none;border-color:var(--gold);}
+  input::placeholder{color:#6e6556;font-style:italic;}
+  .stepper{display:flex;align-items:center;border:1px solid var(--edge);border-radius:8px;overflow:hidden;width:fit-content;flex-shrink:0;}
+  .stepper button{background:var(--well);border:none;width:36px;height:36px;font-size:1.15rem;}
+  .stepper button:hover{background:#221a11;color:var(--gold);}
+  .stepper input,.stepper output{
+    width:48px;height:36px;border:none;border-radius:0;padding:0;text-align:center;
+    border-left:1px solid var(--edge);border-right:1px solid var(--edge);
+    font-variant-numeric:tabular-nums;font-family:var(--title);font-weight:700;
+    background:var(--well);display:flex;align-items:center;justify-content:center;
+    -moz-appearance:textfield;
+  }
+  .stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+  .x-btn{background:none;border:none;color:var(--ink-dim);font-size:1.3rem;line-height:1;padding:4px 6px;border-radius:6px;}
+  .x-btn:hover{color:var(--danger);}
+  .ghost-btn{
+    width:100%;background:none;border:1px dashed #4d3d24;color:var(--ink-dim);
+    border-radius:9px;padding:9px;font-size:.98rem;
+  }
+  .ghost-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+  /* ---------- coleções ---------- */
+  .owner{background:var(--well);border:1px solid var(--edge);border-left:4px solid var(--deep);border-radius:10px;padding:10px;margin-bottom:10px;}
+  .owner-top{display:flex;align-items:center;gap:8px;}
+  .owner-top input{font-weight:600;}
+  .owner .pip{border:none;}
+  .owner .pip:hover{transform:scale(1.08);}
+  .owner-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;flex-wrap:wrap;}
+  .prefix{display:flex;align-items:center;gap:6px;font-size:.92rem;color:var(--ink-dim);}
+  .prefix input{width:58px;text-align:center;text-transform:uppercase;font-family:var(--title);font-weight:700;padding:6px;}
+  .range{font-size:.9rem;color:var(--ink-dim);font-style:italic;}
+
+  /* ---------- jogadores ---------- */
+  .players{display:flex;flex-direction:column;gap:7px;margin-bottom:10px;}
+  .player{display:flex;align-items:center;gap:10px;background:var(--well);border:1px solid var(--edge);border-radius:9px;padding:6px 8px 6px 10px;}
+  .player span:nth-child(2){flex:1;}
+  .num{
+    width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+    background:var(--gold-2);color:var(--ink-dark);font-family:var(--title);font-weight:800;font-size:.72rem;
+  }
+  .add-row{display:flex;gap:8px;}
+  .add-row button{flex-shrink:0;width:auto;padding:0 14px;border-style:solid;}
+
+  /* ---------- regras ---------- */
+  .rule{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
+  .rule label{font-size:1rem;}
+  .rule input[type=text]{width:90px;text-align:center;font-family:var(--title);font-weight:700;}
+
+  /* ---------- botão principal ---------- */
+  .cast{
+    width:100%;border:2px solid #000;border-radius:14px;padding:15px;
+    font-family:var(--title);font-weight:800;font-size:1.15rem;letter-spacing:.08em;color:var(--ink-dark);
+    background:linear-gradient(180deg,#f6dc8e 0%,var(--gold) 50%,var(--gold-2) 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.6), 0 0 0 1px var(--gold-2), 0 8px 26px rgba(212,175,90,.25);
+    transition:transform .1s, box-shadow .2s;
+  }
+  .cast:not(:disabled):hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.6), 0 0 0 1px var(--gold), 0 8px 34px rgba(212,175,90,.45);}
+  .cast:not(:disabled):active{transform:translateY(1px);}
+  .cast:disabled{background:#2c251c;color:#6e6556;box-shadow:0 0 0 1px var(--edge);cursor:not-allowed;}
+
+  /* ---------- packs ---------- */
+  .pack-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:9px;}
+  .pack{aspect-ratio:63/88;perspective:700px;}
+  .pack-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.4,.2,.2,1);}
+  .pack.flipped .pack-inner{transform:rotateY(180deg);}
+  .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:6px;border:3px solid #0a0705;overflow:hidden;}
+  /* verso clássico: moldura marrom + oval */
+  .face.back{
+    background:
+      repeating-linear-gradient(45deg,rgba(0,0,0,.08) 0 2px,transparent 2px 5px),
+      linear-gradient(160deg,#6a4423,#3e2512);
+  }
+  .face.back::before{
+    content:'';position:absolute;inset:14% 12%;border-radius:50%;
+    background:radial-gradient(ellipse at 50% 42%,#f0b061 0%,#c3772f 30%,#7a3f17 62%,#3b1f0c 100%);
+    box-shadow:0 0 0 3px #2f4d7a, 0 0 0 5px #15233a, inset 0 0 10px rgba(0,0,0,.6);
+  }
+  .face.back span{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-family:var(--title);font-weight:800;font-size:.8rem;color:#fbe3a6;text-shadow:0 1px 2px #000;
+  }
+  .face.front{
+    transform:rotateY(180deg);
+    background:linear-gradient(180deg,var(--paper),var(--paper-2));color:var(--ink-dark);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    border-top:9px solid var(--deep);
+  }
+  .face.front b{font-family:var(--title);font-weight:800;font-size:.85rem;}
+  .face.front small{font-size:.66rem;line-height:1.1;text-align:center;padding:0 3px;color:#5b4d36;word-break:break-word;}
+
+  /* ---------- resultado ---------- */
+  .results{display:flex;flex-direction:column;gap:9px;}
+  .result{display:flex;align-items:center;gap:10px;background:var(--well);border:1px solid var(--edge);border-radius:10px;padding:9px 10px;animation:rise .35s ease both;}
+  .result .name{flex:1;font-weight:600;font-size:1.05rem;}
+  .chips{display:flex;flex-wrap:wrap;gap:5px;justify-content:flex-end;}
+  .chip{
+    font-family:var(--title);font-weight:700;font-size:.78rem;padding:3px 8px;border-radius:999px;
+    background:var(--pip);color:#140e08;box-shadow:inset 0 -1px 2px rgba(0,0,0,.25);
+  }
+  .actions{display:flex;gap:8px;margin-top:14px;}
+  .actions button{flex:1;border-style:solid;}
+
+  .hidden{display:none !important;}
+  footer{text-align:center;color:var(--ink-dim);font-size:.92rem;font-style:italic;margin-top:26px;line-height:1.5;}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation:none !important;transition:none !important;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="pips" aria-hidden="true">
+      <span class="pip" style="--pip:#f8f4d4">W</span>
+      <span class="pip" style="--pip:#a9d6f5">U</span>
+      <span class="pip" style="--pip:#c9bfbb">B</span>
+      <span class="pip" style="--pip:#f6a98f">R</span>
+      <span class="pip" style="--pip:#9fd3ad">G</span>
+    </div>
+    <h1 id="title" contenteditable="plaintext-only" spellcheck="false" title="Clique para renomear"></h1>
+    <p class="flavor">“Cada um traz seus baralhos, cada jogador recebe seus boosters sem repetir. O resto fica por conta do destino.”</p>
+  </header>
+
+  <main id="setup">
+    <section class="card">
+      <div class="card-name"><h2>Coleções</h2><div class="pips" id="ownerPips" aria-hidden="true"></div></div>
+      <div class="type-line">Artefato — Baralhos disponíveis</div>
+      <div class="card-body">
+        <div id="owners"></div>
+        <button class="ghost-btn" id="addOwner">+ adicionar coleção</button>
+        <p class="hint" id="stockLine"></p>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-name"><h2>Jogadores</h2></div>
+      <div class="type-line">Criatura — Planeswalkers</div>
+      <div class="card-body">
+        <div class="players" id="players"></div>
+        <form class="add-row" id="addPlayer">
+          <input type="text" id="playerName" placeholder="Nome do jogador" maxlength="24" aria-label="Nome do jogador">
+          <button class="ghost-btn">Adicionar</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-name"><h2>Regras da mesa</h2></div>
+      <div class="type-line">Encantamento — Mesa</div>
+      <div class="card-body">
+        <div class="rule">
+          <label>Boosters por jogador</label>
+          <div class="stepper">
+            <button id="perDec" aria-label="Menos">−</button>
+            <output id="perCount"></output>
+            <button id="perInc" aria-label="Mais">+</button>
+          </div>
+        </div>
+        <div class="rule">
+          <label for="packLabel">Texto no verso do pack</label>
+          <input type="text" id="packLabel" maxlength="6">
+        </div>
+        <p class="hint" id="capacity"></p>
+      </div>
+    </section>
+
+    <button class="cast" id="draw">Sortear</button>
+  </main>
+
+  <section class="card hidden" id="gridCard">
+    <div class="card-name"><h2>Abrindo os packs…</h2></div>
+    <div class="type-line">Instantâneo — Revelação</div>
+    <div class="card-body"><div class="pack-grid" id="grid"></div></div>
+  </section>
+
+  <section class="card hidden" id="resultCard">
+    <div class="card-name"><h2>Resultado</h2></div>
+    <div class="type-line">Feitiço — Distribuição</div>
+    <div class="card-body">
+      <div class="results" id="results"></div>
+      <div class="actions">
+        <button class="ghost-btn" id="copy">Copiar resultado</button>
+        <button class="ghost-btn" id="reset">Novo sorteio</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>Etiquete cada sleeve com o código do baralho (ex: A-7, B-3) antes de jogar.</footer>
+</div>
+
+<script>
+(() => {
+  const MANA = {
+    W: { name: 'Branco',     pip: '#f8f4d4', deep: '#d9cc8f' },
+    U: { name: 'Azul',       pip: '#a9d6f5', deep: '#1f6fb8' },
+    B: { name: 'Preto',      pip: '#c9bfbb', deep: '#2b2421' },
+    R: { name: 'Vermelho',   pip: '#f6a98f', deep: '#c4352a' },
+    G: { name: 'Verde',      pip: '#9fd3ad', deep: '#2c7a48' },
+    C: { name: 'Incolor',    pip: '#d3cdc8', deep: '#7d7772' },
+    M: { name: 'Multicolor', pip: '#f0d27a', deep: '#b8902f' },
+  };
+  const MANA_KEYS = Object.keys(MANA);
+  const MAX_DECKS = 999, MAX_PER = 30;
+  const STORE = 'jumpstart-draw-v1';
+  const DEFAULTS = {
+    title: 'Sorteio Jumpstart',
+    packLabel: 'JS',
+    perPlayer: 2,
+    owners: [
+      { name: 'Coleção 1', prefix: 'A', mana: 'U', count: 12 },
+      { name: 'Coleção 2', prefix: 'B', mana: 'R', count: 12 },
+    ],
+    players: [],
+  };
+
+  const $ = id => document.getElementById(id);
+  const mana = key => MANA[key] || MANA.C;
+  const clamp = (n, max) => { n = Math.floor(Number(n)); return Number.isFinite(n) && n > 0 ? Math.min(n, max) : 0; };
+
+  let state = load();
+  function load(){
+    try {
+      const s = JSON.parse(localStorage.getItem(STORE));
+      if (s && Array.isArray(s.owners) && Array.isArray(s.players)) return { ...DEFAULTS, ...s };
+    } catch {}
+    return structuredClone(DEFAULTS);
+  }
+  function save(){ try { localStorage.setItem(STORE, JSON.stringify(state)); } catch {} }
+
+  // ---------- título ----------
+  const title = $('title');
+  title.textContent = document.title = state.title;
+  title.addEventListener('input', () => { state.title = title.textContent.trim(); document.title = state.title || DEFAULTS.title; save(); });
+  title.addEventListener('blur', () => { if (!state.title) { state.title = DEFAULTS.title; title.textContent = state.title; save(); } });
+  title.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); title.blur(); } });
+
+  // ---------- coleções ----------
+  function pipEl(key, text, tag = 'span'){
+    const el = document.createElement(tag);
+    el.className = 'pip';
+    el.style.setProperty('--pip', mana(key).pip);
+    el.textContent = text;
+    return el;
+  }
+
+  let ranges = [];
+  function renderOwners(){
+    const list = $('owners');
+    list.innerHTML = '';
+    ranges = [];
+    state.owners.forEach((o, i) => {
+      const row = document.createElement('div');
+      row.className = 'owner';
+      row.style.setProperty('--deep', mana(o.mana).deep);
+      row.innerHTML = `
+        <div class="owner-top">
+          <input type="text" class="o-name" maxlength="24" placeholder="Dono da coleção" aria-label="Nome da coleção">
+          <button class="x-btn" aria-label="Remover coleção">×</button>
+        </div>
+        <div class="owner-bottom">
+          <label class="prefix">Prefixo <input type="text" class="o-prefix" maxlength="3" aria-label="Prefixo"></label>
+          <span class="range"></span>
+          <div class="stepper">
+            <button data-step="-1" aria-label="Menos baralhos">−</button>
+            <input type="number" class="o-count" min="0" max="${MAX_DECKS}" inputmode="numeric" aria-label="Quantidade de baralhos">
+            <button data-step="1" aria-label="Mais baralhos">+</button>
+          </div>
+        </div>`;
+
+      const badge = pipEl(o.mana, o.prefix || '?', 'button');
+      badge.title = `Cor: ${mana(o.mana).name} (clique para trocar)`;
+      badge.onclick = () => { o.mana = MANA_KEYS[(MANA_KEYS.indexOf(o.mana) + 1) % MANA_KEYS.length]; update(); renderOwners(); };
+      badge.setAttribute('aria-label', badge.title);
+      row.querySelector('.owner-top').prepend(badge);
+
+      const name = row.querySelector('.o-name');
+      name.value = o.name;
+      name.oninput = () => { o.name = name.value; save(); };
+
+      const prefix = row.querySelector('.o-prefix');
+      prefix.value = o.prefix;
+      prefix.oninput = () => {
+        o.prefix = prefix.value.replace(/[^\p{L}\p{N}]/gu, '').toUpperCase();
+        prefix.value = o.prefix;
+        badge.textContent = o.prefix || '?';
+        update();
+      };
+
+      const count = row.querySelector('.o-count');
+      count.value = o.count;
+      count.oninput = () => { o.count = clamp(count.value, MAX_DECKS); update(); };
+      count.onblur = () => { count.value = o.count; };
+      count.onfocus = () => count.select();
+      row.querySelectorAll('[data-step]').forEach(b => b.onclick = () => {
+        o.count = clamp(o.count + Number(b.dataset.step), MAX_DECKS);
+        count.value = o.count;
+        update();
+      });
+
+      row.querySelector('.x-btn').onclick = () => { state.owners.splice(i, 1); renderOwners(); };
+      ranges[i] = row.querySelector('.range');
+      list.appendChild(row);
+    });
+    update();
+  }
+
+  $('addOwner').onclick = () => {
+    const used = new Set(state.owners.map(o => o.prefix));
+    const prefix = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].find(l => !used.has(l)) || '';
+    const free = MANA_KEYS.find(k => !state.owners.some(o => o.mana === k)) || 'C';
+    state.owners.push({ name: '', prefix, mana: free, count: 12 });
+    renderOwners();
+    $('owners').lastElementChild.querySelector('.o-name').focus();
+  };
+
+  // ---------- jogadores ----------
+  function renderPlayers(){
+    const list = $('players');
+    list.innerHTML = '';
+    state.players.forEach((name, i) => {
+      const row = document.createElement('div');
+      row.className = 'player';
+      row.innerHTML = `<span class="num">${i + 1}</span><span></span><button class="x-btn" aria-label="Remover jogador">×</button>`;
+      row.children[1].textContent = name;
+      row.querySelector('button').onclick = () => { state.players.splice(i, 1); renderPlayers(); };
+      list.appendChild(row);
+    });
+    update();
+  }
+
+  $('addPlayer').onsubmit = e => {
+    e.preventDefault();
+    const input = $('playerName');
+    const name = input.value.trim();
+    if (!name) return;
+    state.players.push(name);
+    input.value = '';
+    renderPlayers();
+  };
+
+  // ---------- regras ----------
+  const setPer = n => { state.perPlayer = Math.min(MAX_PER, Math.max(1, n)); $('perCount').textContent = state.perPlayer; update(); };
+  $('perDec').onclick = () => setPer(state.perPlayer - 1);
+  $('perInc').onclick = () => setPer(state.perPlayer + 1);
+  const packLabel = $('packLabel');
+  packLabel.value = state.packLabel;
+  packLabel.oninput = () => { state.packLabel = packLabel.value; save(); };
+
+  // ---------- validação ----------
+  const pool = () => state.owners.flatMap(o =>
+    Array.from({ length: o.count }, (_, i) => ({ id: `${o.prefix}-${i + 1}`, mana: o.mana })));
+
+  function problem(total, needed){
+    const prefixes = state.owners.map(o => o.prefix);
+    if (prefixes.some(p => !p)) return 'Toda coleção precisa de um prefixo.';
+    if (new Set(prefixes).size !== prefixes.length) return 'Os prefixos das coleções precisam ser diferentes.';
+    if (total === 0) return 'Adicione pelo menos uma coleção com baralhos.';
+    if (!state.players.length) return 'Adicione pelo menos 1 jogador.';
+    if (needed > total) return `${state.players.length} jogadores × ${state.perPlayer} = ${needed} boosters, mas só há ${total} baralhos.`;
+    return null;
+  }
+
+  function update(){
+    const total = state.owners.reduce((s, o) => s + o.count, 0);
+    const needed = state.players.length * state.perPlayer;
+
+    state.owners.forEach((o, i) => { if (ranges[i]) ranges[i].textContent = o.count ? `${o.prefix || '?'}-1 a ${o.prefix || '?'}-${o.count}` : 'vazia'; });
+    $('ownerPips').replaceChildren(...state.owners.map(o => pipEl(o.mana, '')));
+    $('stockLine').textContent = `${total} baralho${total === 1 ? '' : 's'} no total.`;
+
+    const err = problem(total, needed);
+    const cap = $('capacity');
+    cap.textContent = err || `${needed} de ${total} boosters serão distribuídos.`;
+    cap.classList.toggle('bad', !!err);
+    $('draw').disabled = !!err;
+    save();
+  }
+
+  // ---------- sorteio ----------
+  function shuffle(arr){
+    const a = arr.slice();
+    const rnd = new Uint32Array(1);
+    for (let i = a.length - 1; i > 0; i--) {
+      // ponytail: módulo tem viés de ~n/2^32, irrelevante para centenas de baralhos
+      const j = crypto.getRandomValues(rnd)[0] % (i + 1);
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  let lastText = '';
+  $('draw').onclick = () => {
+    const packs = shuffle(pool());
+    const { players, perPlayer } = state;
+    if (problem(packs.length, players.length * perPlayer)) return;
+
+    // distribuição em rodadas: cada jogador pega 1 por vez
+    const hands = players.map((_, p) => Array.from({ length: perPlayer }, (_, r) => packs[r * players.length + p]));
+    const dealt = packs.slice(0, players.length * perPlayer);
+    const owner = new Map(hands.flatMap((h, p) => h.map(pk => [pk.id, players[p]])));
+
+    $('setup').classList.add('hidden');
+    $('resultCard').classList.add('hidden');
+    $('gridCard').classList.remove('hidden');
+    const grid = $('grid');
+    grid.innerHTML = '';
+    const step = Math.min(220, 4000 / dealt.length);
+
+    dealt.forEach((pk, i) => {
+      const el = document.createElement('div');
+      el.className = 'pack';
+      el.innerHTML = `<div class="pack-inner"><div class="face back"><span></span></div><div class="face front"><b></b><small></small></div></div>`;
+      el.querySelector('.back span').textContent = state.packLabel;
+      el.querySelector('.front').style.setProperty('--deep', mana(pk.mana).deep);
+      el.querySelector('b').textContent = pk.id;
+      el.querySelector('small').textContent = owner.get(pk.id);
+      grid.appendChild(el);
+      setTimeout(() => el.classList.add('flipped'), step * i + 200);
+    });
+
+    setTimeout(() => {
+      const byId = (a, b) => a.id.localeCompare(b.id, undefined, { numeric: true });
+      const list = $('results');
+      list.innerHTML = '';
+      hands.forEach((h, p) => {
+        const row = document.createElement('div');
+        row.className = 'result';
+        row.style.animationDelay = `${p * 60}ms`;
+        row.innerHTML = `<span class="num">${p + 1}</span><span class="name"></span><span class="chips"></span>`;
+        row.querySelector('.name').textContent = players[p];
+        row.querySelector('.chips').append(...h.slice().sort(byId).map(pk => {
+          const c = document.createElement('span');
+          c.className = 'chip';
+          c.style.setProperty('--pip', mana(pk.mana).pip);
+          c.textContent = pk.id;
+          return c;
+        }));
+        list.appendChild(row);
+      });
+      lastText = `${state.title}\n` + hands.map((h, p) => `${players[p]}: ${h.slice().sort(byId).map(pk => pk.id).join(', ')}`).join('\n');
+      $('resultCard').classList.remove('hidden');
+      $('resultCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, step * dealt.length + 800);
+  };
+
+  $('copy').onclick = async () => {
+    const btn = $('copy');
+    try { await navigator.clipboard.writeText(lastText); btn.textContent = 'Copiado!'; }
+    catch { btn.textContent = 'Não foi possível copiar'; }
+    setTimeout(() => btn.textContent = 'Copiar resultado', 1600);
+  };
+
+  $('reset').onclick = () => {
+    $('setup').classList.remove('hidden');
+    $('gridCard').classList.add('hidden');
+    $('resultCard').classList.add('hidden');
+    $('grid').innerHTML = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  $('perCount').textContent = state.perPlayer;
+  renderOwners();
+  renderPlayers();
+})();
+</script>
+</body>
+</html>
